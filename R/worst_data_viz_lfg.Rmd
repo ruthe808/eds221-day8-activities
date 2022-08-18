@@ -1,0 +1,115 @@
+---
+title: "Practicing Worst Data Viz"
+author: "Ruth Enriquez"
+date: "2022-08-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(ggplot2)
+library(paletteer)
+library(sf)
+library(janitor)
+library(png)
+library(patchwork)
+library(dplyr)
+library(grid)
+```
+
+```{r}
+space_launch <- read_csv(here("data","space_launches.csv"))
+```
+
+```{r}
+space_group <- space_launch |> 
+  group_by(launch_year) |> 
+  count(type) |> 
+  rename(type_count = n)
+```
+
+```{r}
+my_image <- readPNG(here("wut.png"))
+```
+
+```{r}
+gg_space <- ggplot(data = space_group, aes(x = launch_year,
+                                           y = type))+
+  geom_point() +
+    annotation_custom(rasterGrob(my_image,
+                               width = unit(0.5,"npc"),
+                               height = unit(0.7,"npc")),
+                    -Inf, Inf, -Inf, Inf) +
+  labs(title = "Minions Gain Control of S p a c e",
+       subtitle = "WHAAAAAAAAAAAAAAT", 
+       x= "R0Ck3t g0 B00M",
+       y = "TO DA MOON")
+
+gg_space
+```
+
+## **Task 2:**
+
+Read in the SF emissions data set
+
+```{r}
+sf_inventory <- read_csv(here("data","San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv"))
+```
+
+Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by sector_general
+
+```{r}
+sector_emissions <- sf_inventory %>%
+  group_by(Sector_General, Calendar_Year) %>%
+  summarize(total_greenhouse_mtCO2e = sum(Emissions_mtCO2e, na.rm = TRUE))
+```
+
+Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by year and commodity type
+
+```{r}
+ycom_emissions <- sf_inventory |> 
+  group_by(Calendar_Year, Commodity_Type)  |> 
+  summarize(total_greenhouse_mtCO2e = sum(Emissions_mtCO2e, na.rm = TRUE))
+```
+
+Create a subset of the data that only contains observations from 2005 on, only for observations where `Sector_Detail2` contains the pattern "PG&E", then limit to columns `Calendar_Year`, `Sector_Detail2` and `Emissions_mtCO2e`
+
+```{r}
+sf_2005 <- sf_inventory |> 
+  filter(Calendar_Year == 2005) |> 
+  filter(str_detect(Sector_Detail2, pattern = "PG&E")) |> 
+  select(Calendar_Year, Sector_Detail2, Emissions_mtCO2e)
+```
+
+## **Task 3: Do your data viz best**
+
+Create a finalized graph (as perfect as you can make it) using the San Francisco GHG emissions dataset. **You** get to choose what you want to visualize. You can pick which variables & observations you're interested in. You may want to do some wrangling / summarizing first.
+
+
+```{r}
+sf_ghg <- sf_inventory |> 
+  group_by(Sector_General) |> 
+  select(Calendar_Year, Sector_General, Commodity_Type, Emissions_mtCO2e)
+```
+
+```{r}
+sf_check <- sf_ghg |> 
+  group_by(Sector_General) |> 
+  filter(Sector_General %in% "Wastewater" | Sector_General %in% "Agriculture") |>
+  select(Calendar_Year, Sector_General, Commodity_Type, Emissions_mtCO2e)
+```
+
+
+```{r}
+sf_com <- sf_ghg |> 
+  group_by(Commodity_Type) |> 
+  summarize(total_greenhouse_mtCO2e = sum(Emissions_mtCO2e, na.rm = TRUE)) |> 
+  select(Calendar_Year, Commodity_Type, Emissions_mtCO2e)
+```
+
+
+
+
+
