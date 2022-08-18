@@ -89,27 +89,49 @@ Create a finalized graph (as perfect as you can make it) using the San Francisco
 
 
 ```{r}
-sf_ghg <- sf_inventory |> 
-  group_by(Sector_General) |> 
-  select(Calendar_Year, Sector_General, Commodity_Type, Emissions_mtCO2e)
+sf_com <- sf_inventory |> 
+  group_by(Calendar_Year, Commodity_Type) |> 
+  filter(Calendar_Year == 2019) |> 
+  summarize(total_greenhouse_mtCO2e = sum(Emissions_mtCO2e, na.rm = TRUE))
 ```
 
 ```{r}
-sf_check <- sf_ghg |> 
-  group_by(Sector_General) |> 
-  filter(Sector_General %in% "Wastewater" | Sector_General %in% "Agriculture") |>
-  select(Calendar_Year, Sector_General, Commodity_Type, Emissions_mtCO2e)
+sf_gg <- ggplot(data = sf_com, aes(x = Commodity_Type,
+                                   y = total_greenhouse_mtCO2e)) +
+  geom_point(aes(size = Commodity_Type))
+
+sf_gg
+```
+
+```{r}
+sf_ag_landfill <- sf_inventory |> 
+  group_by(Calendar_Year, Sector_General) |> 
+  filter(Sector_General %in% "Landfilled Organics" | Sector_General %in% "Agriculture") |> 
+  select(Calendar_Year, Sector_General, Emissions_mtCO2e) |> 
+  summarize(total_greenhouse_mtCO2e = sum(Emissions_mtCO2e, na.rm = TRUE))
 ```
 
 
 ```{r}
-sf_com <- sf_ghg |> 
-  group_by(Commodity_Type) |> 
-  summarize(total_greenhouse_mtCO2e = sum(Emissions_mtCO2e, na.rm = TRUE)) |> 
-  select(Calendar_Year, Commodity_Type, Emissions_mtCO2e)
+compare_ag_landfill_emissions_gg <- ggplot(data = sf_ag_landfill, aes(x = Calendar_Year, 
+                                                                      y = total_greenhouse_mtCO2e,
+                                                                      color = Sector_General)) +
+  geom_line() +
+  labs(title = "Comparing Agriculture to Landfill Organics Emissions",
+       x = "Total Greenhouse Emissions (mtCO2e)",
+       y = "Year")
+
+compare_ag_landfill_emissions_gg
 ```
 
+```{r}
+ggsave(plot = gg_space, here::here("fig", "oh_dear.png"),
+       width = 5,
+       height = 6)
 
-
+ggsave(plot = compare_ag_landfill_emissions_gg, here::here("fig", "pls_send_halp.png"),
+       width = 5,
+       height = 6)
+```
 
 
